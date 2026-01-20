@@ -28,8 +28,8 @@ ST_CONFIG = {
 st.set_page_config(**ST_CONFIG)
 
 # 🛑 CLOUD KEYS
-QDRANT_URL = "https://cb126147-b536-4963-bc80-5df16489d030.us-east4-0.gcp.cloud.qdrant.io"
-QDRANT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.sWewvcj7k-GdQhPioomFrjtkVcJA9XjmEM4Bpd4CVCk"
+QDRANT_URL = st.secrets["QDRANT_URL"]
+QDRANT_KEY = st.secrets["QDRANT_KEY"]
 COLLECTION_NAME = "disaster_reports"
 DOWNLINK_COLLECTION = "courier_bag"
 
