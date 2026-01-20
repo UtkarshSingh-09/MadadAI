@@ -1,0 +1,11 @@
+qdrant-client>=1.7.0
+fastembed>=0.2.0
+numpy
+pillow
+streamlit
+streamlit
+cryptography
+pillow
+streamlit-js-eval
+qdrant-client
+watchdog

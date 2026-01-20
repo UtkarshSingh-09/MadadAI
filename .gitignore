@@ -1,0 +1,18 @@
+# --- Security (NEVER UPLOAD THESE) ---
+secret.key
+*.env
+.DS_Store
+
+# --- Junk/Temporary Files ---
+__pycache__/
+*.pyc
+qdrant_data/
+local_storage.json
+
+# --- Mule Data ---
+mule_storage.json
+mule_inbox.json
+
+# --- Virtual Environments (if you use them) ---
+venv/
+.streamlit/
