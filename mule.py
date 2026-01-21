@@ -5,12 +5,14 @@ import time
 import os
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from dotenv import load_dotenv
 
-print("\n✅ RUNNING FINAL MULE (CUSTOM PORTS: 6008/6009)\n")
+print("\n✅ RUNNING FINAL MULE (DIAGNOSTIC LOUD MODE | PORTS: 6008/6009)\n")
+load_dotenv()
 
-# --- CONFIG ---
-QDRANT_URL = "https://cb126147-b536-4963-bc80-5df16489d030.us-east4-0.gcp.cloud.qdrant.io"
-QDRANT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.sWewvcj7k-GdQhPioomFrjtkVcJA9XjmEM4Bpd4CVCk"
+# --- CONFIG --- 
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_KEY = os.getenv("QDRANT_KEY")
 UPLINK_COLLECTION = "disaster_reports"
 DOWNLINK_COLLECTION = "courier_bag"
 
@@ -34,55 +36,110 @@ def check_net():
         return True
     except: return False
 
+# --- 🛡️ ROBUST SYNC ENGINE ---
 def cloud_sync():
     first_run = True
+    print("☁️ Cloud Sync Engine: STARTED")
+    
     while True:
-        time.sleep(5)
-        if os.path.exists(STORAGE_FILE) and check_net():
-            try:
-                client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_KEY, prefer_grpc=False)
-                if first_run:
-                    try: client.get_collection(UPLINK_COLLECTION)
-                    except: 
-                        client.recreate_collection(
+        time.sleep(5) # Breathe
+        
+        # 🔍 LOUD CHECK: Check internet every cycle
+        if not check_net():
+            print("⚠️ No Internet. Waiting...")
+            continue
+
+        try:
+            # 1. Connect (Re-establish every cycle for stability)
+            client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_KEY, timeout=60, prefer_grpc=False)
+            
+            # 2. Safety Check: Collection Exists?
+            if first_run:
+                try: 
+                    if not client.collection_exists(UPLINK_COLLECTION):
+                        client.create_collection(
                             collection_name=UPLINK_COLLECTION,
                             vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE)
                         )
-                    first_run = False
+                        print(f"✅ Created Collection: {UPLINK_COLLECTION}")
+                except Exception as e:
+                    print(f"⚠️ Collection Check Warning: {e}")
+                first_run = False
 
+            # --- 🚀 UPLINK SECTION (Local to Cloud) ---
+            if os.path.exists(STORAGE_FILE) and os.path.getsize(STORAGE_FILE) > 0:
                 with open(STORAGE_FILE, "r") as f: lines = f.readlines()
                 points = []
+                
                 for i, line in enumerate(lines):
                     if not line.strip(): continue
                     try:
                         data = json.loads(line)
-                        points.append(models.PointStruct(id=int(time.time()*1000)+i, vector=[0.0]*384, payload=data))
+                        if i == 0: print(f"🔍 DEBUG PAYLOAD PREVIEW: {str(data)[:100]}...") 
+                        
+                        points.append(models.PointStruct(
+                            id=int(time.time()*1000)+i, 
+                            vector=[0.0]*384, 
+                            payload=data
+                        ))
                     except: pass
                 
                 if points:
-                    print(f"☁️ Uploading {len(points)} packets...")
-                    client.upsert(collection_name=UPLINK_COLLECTION, points=points)
-                    print("✅ Upload Success!")
-                    open(STORAGE_FILE, 'w').close()
-                elif lines:
-                     open(STORAGE_FILE, 'w').close()
+                    success = False
+                    for attempt in range(5):
+                        try:
+                            print(f"☁️ Uploading {len(points)} packets (Attempt {attempt+1}/5)...")
+                            client.upsert(collection_name=UPLINK_COLLECTION, points=points)
+                            success = True
+                            print("✅ Upload Success! Database Updated.")
+                            break 
+                        except Exception as e:
+                            print(f"❌ Upload Failed: {e}")
+                            time.sleep(2)
 
+                    if success:
+                        open(STORAGE_FILE, 'w').close()
+
+            # --- 📬 DOWNLINK SECTION (Cloud to Local) ---
+            # Added "Loud" debugging to see exactly why orders might be missing
+            print(f"🔍 Checking '{DOWNLINK_COLLECTION}' for orders...", end="\r")
+            
+            try:
                 if client.collection_exists(DOWNLINK_COLLECTION):
-                    orders = client.scroll(collection_name=DOWNLINK_COLLECTION, limit=100, with_payload=True)[0]
+                    orders_result = client.scroll(collection_name=DOWNLINK_COLLECTION, limit=50, with_payload=True)
+                    orders = orders_result[0]
+                    
                     if orders:
-                        mail = [p.payload for p in orders]
+                        print(f"\n📬 FOUND {len(orders)} ORDERS IN CLOUD!")
+                        mail = []
+                        for p in orders:
+                            payload = p.payload
+                            target = payload.get('target_id', 'UNKNOWN')
+                            print(f"   - 📦 Msg for {target} (ID: {p.id})")
+                            mail.append(payload)
+                            
                         with open(INBOX_FILE, "w") as f: json.dump(mail, f)
-            except Exception as e:
-                print(f"❌ Sync Error: {e}")
+                        print(f"💾 Sync Complete: {len(mail)} orders saved to {INBOX_FILE}")
+                else:
+                    print(f"\n⚠️ Downlink Collection '{DOWNLINK_COLLECTION}' does not exist in Cloud.")
+            except Exception as e_down:
+                print(f"\n❌ Downlink Error: {e_down}")
 
+        except Exception as e:
+            print(f"\n❌ Critical Sync Error: {e}")
+
+# --- UDP & TCP HANDLERS (UNCHANGED) ---
 def beacon():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     while True:
         try:
             ip = get_ip()
-            sock.sendto(json.dumps({"role": "mule_uplink", "ip": ip, "port": UPLINK_PORT}).encode(), ('<broadcast>', UDP_BEACON_PORT))
-            sock.sendto(json.dumps({"role": "mule_reply", "ip": ip, "port": REPLY_PORT}).encode(), ('<broadcast>', UDP_BEACON_PORT))
+            msg_uplink = json.dumps({"role": "mule_uplink", "ip": ip, "port": UPLINK_PORT}).encode()
+            msg_reply = json.dumps({"role": "mule_reply", "ip": ip, "port": REPLY_PORT}).encode()
+            
+            sock.sendto(msg_uplink, ('<broadcast>', UDP_BEACON_PORT))
+            sock.sendto(msg_reply, ('<broadcast>', UDP_BEACON_PORT))
             time.sleep(2)
         except: time.sleep(5)
 
@@ -109,7 +166,7 @@ def uplink_server():
                         clean = decoded[start:end+1]
                         parsed = json.loads(clean)
                         with open(STORAGE_FILE, "a") as f: f.write(json.dumps(parsed) + "\n")
-                        print("📦 SOS Received")
+                        print(f"📦 SOS Received from {addr}")
                         conn.sendall(b"ACK")
                 conn.close()
             except: pass
@@ -125,20 +182,28 @@ def reply_server():
                 data = conn.recv(1024).decode()
                 if "GET_MAIL:" in data:
                     tid = data.split(":")[1].strip()
+                    print(f"📲 App {addr} requesting mail for: {tid}")
                     mail = []
                     if os.path.exists(INBOX_FILE):
                         with open(INBOX_FILE, 'r') as f:
-                            mail = [m for m in json.load(f) if m.get('target_id') == tid]
+                            all_mail = json.load(f)
+                            mail = [m for m in all_mail if m.get('target_id') == tid]
+                    
                     conn.sendall(json.dumps(mail).encode())
-                    if mail: print(f"📤 Delivered mail to {tid}")
+                    if mail: 
+                        print(f"📤 Delivered {len(mail)} orders to {tid}")
+                    else:
+                        print(f"⚪ No mail found for {tid}")
                 conn.close()
             except: pass
 
 if __name__ == "__main__":
     os.system(f"lsof -ti:{UPLINK_PORT} | xargs kill -9 2>/dev/null")
     os.system(f"lsof -ti:{REPLY_PORT} | xargs kill -9 2>/dev/null")
+    
     threading.Thread(target=cloud_sync, daemon=True).start()
     threading.Thread(target=beacon, daemon=True).start()
     threading.Thread(target=uplink_server, daemon=True).start()
+    
     print(f"✅ MULE ACTIVE | Uplink: {UPLINK_PORT} | Reply: {REPLY_PORT}")
     reply_server()
