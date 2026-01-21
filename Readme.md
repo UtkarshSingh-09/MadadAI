@@ -214,6 +214,10 @@ Push to the Branch (git push origin feature/NewFeature)
 
 Open a Pull Request
 
+<p align="center">
+  <img src="images/architecture_diagram.png" width="600" alt="MadadAI Architecture">
+</p>
+
 ## 📬 Contact
 
 ## Developer :- Utkarsh Singh
