@@ -218,6 +218,25 @@ Open a Pull Request
   <img src="https://github.com/user-attachments/assets/585d8d70-f32f-496e-8517-506f902464c9" width="600" alt="MadadAI Architecture">
 </p>
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/cd5f9080-5f4e-466c-b934-bd4fa0a51809" width="800" alt="MadadAI Dashboard Main View">
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/097d76f2-2fa4-4bb3-9426-ea8cf462a23a" width="800" alt="Survivor Node Interface">
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/91bd0c24-7b36-4759-8898-10c623c5d5f8" width="600" alt="System Analytics">
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/b0937e36-71a2-482f-908e-bd30adc7af66" width="45%" alt="Mobile View 1">
+   
+  <img src="https://github.com/user-attachments/assets/e96cedb1-42c4-4158-9533-ebaed0f8b675" width="45%" alt="Mobile View 2">
+</p>
+
+
 ## 📬 Contact
 
 ## Developer :- Utkarsh Singh
