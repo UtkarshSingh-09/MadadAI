@@ -215,8 +215,7 @@ Push to the Branch (git push origin feature/NewFeature)
 Open a Pull Request
 
 <p align="center">
-  <img src="<img width="1470" height="834" alt="Screenshot 2026-01-22 at 12 43 43 AM" src="https://github.com/user-attachments/assets/585d8d70-f32f-496e-8517-506f902464c9" />
-" width="600" alt="MadadAI Architecture">
+  <img src="https://github.com/user-attachments/assets/585d8d70-f32f-496e-8517-506f902464c9" width="600" alt="MadadAI Architecture">
 </p>
 
 ## 📬 Contact
