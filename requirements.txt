@@ -3,7 +3,6 @@ fastembed>=0.2.0
 numpy
 pillow
 streamlit
-streamlit
 cryptography
 pillow
 streamlit-js-eval

@@ -15,7 +15,7 @@ import numpy as np
 
 # --- 1. CONFIGURATION & STYLE ---
 ST_CONFIG = {
-    "page_title": "MadadAI Command HQ v2.7",
+    "page_title": "MadadAI Command HQ",
     "page_icon": "🛰️",
     "layout": "wide",
     "initial_sidebar_state": "expanded"
@@ -192,7 +192,7 @@ with st.sidebar:
 st.markdown('<div class="header-container">', unsafe_allow_html=True)
 c_head_1, c_head_2 = st.columns([3, 1])
 with c_head_1:
-    st.title("Disaster Response Command v2.7")
+    st.title("Disaster Response Command")
     st.caption("Real-time Decentralized Mesh Network Monitor")
 with c_head_2:
     st.markdown(f"<div style='text-align:right; font-family:monospace; color:#58a6ff;'>SYSTEM TIME<br>{datetime.datetime.now().strftime('%H:%M:%S')}</div>", unsafe_allow_html=True)
